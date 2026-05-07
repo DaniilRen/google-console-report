@@ -79,8 +79,6 @@ def main():
             start_date.strftime('%d.%m.%Y'), end_date.strftime('%d.%m.%Y'), site_url
         )
         
-        print(f"\nReport saved successfully: {output_file}")
-        
     except FileNotFoundError as e:
         print(f"\nError: {e}")
         print("\nMake sure client_secrets.json is in the project folder")
