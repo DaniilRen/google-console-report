@@ -6,14 +6,13 @@ Automatic PDF report generator based on Google Search Console data with professi
 
 - Automatic data collection from Google Search Console API
 - Data visualization with charts and diagrams
-- Professional PDF report generation
+- PDF report generation
 - Support for multiple metrics:
-- Top 10 search queries
-- Top 10 countries by clicks
-- Device breakdown (desktop, mobile, tablet)
-- CTR and position distribution
+	- Top search queries
+	- Top countries by clicks
+	- Device breakdown (desktop, mobile, tablet)
+	- CTR and position distribution
 - Secure credential storage via .env file
-- Handles zero data scenarios gracefully
 
 ## Requirements
 
@@ -75,14 +74,36 @@ pip install -r requirements.txt
 
 * Roboto-Bold.ttf
 
-3. Copy .env.example to .env and configure parameters:
+3. Copy env_example to .env and configure parameters:
 ```env
-GOOGLE_CLIENT_SECRETS_FILE=client_secrets.json
-GOOGLE_TOKEN_FILE=token.json
-SITE_URL=https://your-website.com/
-REPORT_DAYS_BACK=28
-REPORT_TITLE=Search Console Report
-COMPANY_NAME=Your Company Name
+# Website Configuration
+SITE_URL=https://domen.com/ - your website working URL
+URLS_TO_INSPECT=/home,/about,/contacts - pages on website which will be inspected (only for INSPECTION report section)
+
+# Report Configuration
+REPORT_DAYS_BACK=30 - days from current date that will be analyzed
+REPORT_TITLE=New report - title of report
+COMPANY_NAME=Best Company - title of company in report
+REPORT_OUTPUT_DIR=reports - dir for generated reports
+CHARTS_OUTPUT_DIR=charts - dir for generated charts
+
+# report sectiona to include. 'true' - section included in report, 'false' - not included
+SECTION_METRICS=true
+SECTION_TOP_QUERIES=true
+SECTION_TOP_COUNTRIES=true
+SECTION_DEVICES=true
+SECTION_INSPECTION=true
+SECTION_CHARTS=true
+
+# Theme settings (GRAY, BLUE, RED, GREEN, PURPLE)
+THEME=GRAY
+
+# PDF Settings. Report page style
+PDF_PAGE_SIZE=letter
+PDF_LEFT_MARGIN=72
+PDF_RIGHT_MARGIN=72
+PDF_TOP_MARGIN=72
+PDF_BOTTOM_MARGIN=72
 ```
 
 ## Usage
