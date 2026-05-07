@@ -10,6 +10,7 @@ GOOGLE_SCOPES=https://www.googleapis.com/auth/webmasters.readonly
 
 # Website Configuration
 SITE_URL=https://your-website.com/
+URLS_TO_INSPECT=/about,/contact,/blog,/products,/services
 
 # Report Configuration
 REPORT_DAYS_BACK=28
@@ -18,8 +19,8 @@ COMPANY_NAME=Yout website namee
 REPORT_OUTPUT_DIR=reports
 CHARTS_OUTPUT_DIR=charts
 
-# Chart Colors (comma-separated HEX values)
-CHART_COLORS=#3498DB,#2ECC71,#E74C3C,#F39C12,#9B59B6
+# Theme settings
+THEME=GRAY
 
 # PDF Settings
 PDF_PAGE_SIZE=letter

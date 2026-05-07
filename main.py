@@ -2,113 +2,94 @@ import sys
 from datetime import datetime
 from dotenv import load_dotenv
 from auth import GoogleAuth
-from data_fetcher import SearchConsoleDataFetcher
-from visualizer import ChartGenerator
-from report_generator import PDFReportGenerator
-from config import CHARTS_DIR, get_date_range, SITE_URL
+from models.data_fetcher import DataFetcher
+from services.chart_service import ChartService
+from services.report_service import ReportService
+from config import CHARTS_DIR, get_date_range, SITE_URL, URLS_TO_INSPECT
 import pandas as pd
 
 load_dotenv()
 
 def main():
     print("=" * 60)
-    print("Генератор отчётов Google Search Console")
+    print("Google Search Console Report Generator")
     print("=" * 60)
     
     site_url = SITE_URL
     if not site_url:
-        site_url = input("Введите URL вашего сайта (например, https://example.com/): ").strip()
+        site_url = input("Enter your website URL (e.g., https://example.com/): ").strip()
     
     if not site_url:
-        print("Ошибка: URL сайта не может быть пустым")
+        print("Error: Website URL cannot be empty")
         return
     
-    start_date, end_date = get_date_range()
+    print(f"\nURLs to inspect: {', '.join(URLS_TO_INSPECT)}")
     
-    print(f"\nЗагрузка данных за период {start_date} - {end_date}...")
+    start_date, end_date = get_date_range()
+    print(f"\nLoading data for period {start_date} to {end_date}...")
     
     try:
         service = GoogleAuth.authenticate()
+        fetcher = DataFetcher(service, site_url)
         
-        fetcher = SearchConsoleDataFetcher(site_url)
-        fetcher.set_service(service)
-        
-        rows = fetcher.fetch_analytics(
+        rows = fetcher.analytics.fetch(
             start_date.strftime('%Y-%m-%d'),
             end_date.strftime('%Y-%m-%d'),
             dimensions=['query', 'page', 'device', 'country']
         )
         
         if not rows:
-            print("Данные за выбранный период не найдены. Генерация отчёта с нулевыми показателями...")
-            df = pd.DataFrame(columns=['query', 'page', 'device', 'country', 'clicks', 'impressions', 'ctr', 'position'])
-            metrics = {
-                'total_clicks': 0,
-                'total_impressions': 0,
-                'avg_ctr': 0,
-                'avg_position': 0
-            }
-            top_queries = pd.DataFrame(columns=['query', 'clicks', 'impressions', 'ctr', 'position'])
-            top_countries = pd.DataFrame(columns=['country', 'clicks', 'impressions', 'ctr', 'position'])
-            devices = pd.DataFrame(columns=['device', 'clicks', 'impressions', 'ctr', 'position'])
+            print("No data found for selected period. Generating report with zero values...")
+            analytics_df = pd.DataFrame(columns=['query', 'page', 'device', 'country', 'clicks', 'impressions', 'ctr', 'position'])
         else:
-            df = fetcher.process_data(rows)
-            metrics = fetcher.get_summary_metrics(df)
-            top_queries = fetcher.get_top_queries(df, 10)
-            top_countries = fetcher.get_top_countries(df, 10)
-            devices = fetcher.get_device_breakdown(df)
+            analytics_df = fetcher.analytics.process(rows)
         
-        print(f"Обработано записей: {len(df)}")
-        print(f"Всего кликов: {metrics['total_clicks']:,}")
-        print(f"Всего показов: {metrics['total_impressions']:,}")
-        print(f"Стран: {len(top_countries)}")
-        print(f"Устройств: {len(devices)}")
+        metrics_summary = fetcher.analytics.get_summary(analytics_df)
+        top_queries = fetcher.analytics.get_top_queries(analytics_df, 10)
+        top_countries = fetcher.analytics.get_top_countries(analytics_df, 10)
+        devices = fetcher.analytics.get_device_breakdown(analytics_df)
         
-        print("\nГенерация графиков...")
+        print(f"Records processed: {len(analytics_df)}")
+        print(f"Total clicks: {metrics_summary['total_clicks']:,}")
+        print(f"Total impressions: {metrics_summary['total_impressions']:,}")
         
-        charts = []
+        print("\nFetching URL inspection data...")
+        inspection_df = fetcher.inspection.fetch(URLS_TO_INSPECT)
+        indexing_summary = fetcher.inspection.get_summary(inspection_df)
         
-        chart1 = f"{CHARTS_DIR}/top_queries.png"
-        ChartGenerator.create_top_queries_chart(df, chart1)
-        charts.append(chart1)
+        if indexing_summary['urls_checked'] > 0:
+            print(f"URLs inspected: {indexing_summary['urls_checked']}")
+            print(f"Indexed: {indexing_summary['urls_indexed']}")
+        else:
+            print("No URL inspection data available")
         
-        chart2 = f"{CHARTS_DIR}/device_distribution.png"
-        ChartGenerator.create_clicks_by_device_bar_chart(df, chart2)
-        charts.append(chart2)
+        print("\nGenerating charts...")
+        chart_service = ChartService()
         
-        chart3 = f"{CHARTS_DIR}/top_countries.png"
-        ChartGenerator.create_top_countries_chart(df, chart3)
-        charts.append(chart3)
+        if not analytics_df.empty:
+            charts = chart_service.generate_all_charts(analytics_df)
+        else:
+            charts = chart_service.generate_empty_charts(start_date.strftime('%d.%m.%Y'), end_date.strftime('%d.%m.%Y'))
         
-        chart4 = f"{CHARTS_DIR}/ctr_distribution.png"
-        ChartGenerator.create_ctr_distribution_chart(df, chart4)
-        charts.append(chart4)
-        
-        chart5 = f"{CHARTS_DIR}/position_distribution.png"
-        ChartGenerator.create_position_distribution_chart(df, chart5)
-        charts.append(chart5)
-        
-        print("Формирование PDF отчёта...")
-        
-        generator = PDFReportGenerator()
-        output_file = generator.generate(
-            metrics, top_queries, top_countries, devices, charts,
-            start_date.strftime('%d.%m.%Y'),
-            end_date.strftime('%d.%m.%Y'),
-            site_url
+        print("Generating PDF report...")
+        report_service = ReportService()
+        output_file = report_service.generate(
+            analytics_df, top_queries, top_countries, devices,
+            inspection_df, indexing_summary, charts,
+            start_date.strftime('%d.%m.%Y'), end_date.strftime('%d.%m.%Y'), site_url
         )
         
-        print(f"\nОтчёт успешно сохранён: {output_file}")
+        print(f"\nReport saved successfully: {output_file}")
         
     except FileNotFoundError as e:
-        print(f"\nОшибка: {e}")
-        print("\nУбедитесь, что файл client_secrets.json находится в папке проекта")
+        print(f"\nError: {e}")
+        print("\nMake sure client_secrets.json is in the project folder")
     except Exception as e:
-        print(f"\nОшибка: {e}")
-        print("\nВозможные решения:")
-        print("1. Проверьте настройки в файле .env")
-        print("2. Убедитесь, что URL сайта подтверждён в Google Search Console")
-        print("3. Проверьте, что API Google Search Console включён в Google Cloud Console")
+        print(f"\nError: {e}")
+        print("\nPossible solutions:")
+        print("1. Check your .env configuration")
+        print("2. Verify the site URL is verified in Google Search Console")
+        print("3. Ensure Google Search Console API is enabled")
 
 if __name__ == "__main__":
     main()
