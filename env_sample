@@ -1,0 +1,29 @@
+# Sample .env file. 
+# replace "SITE_URL" with your website url
+# change "Report Configuration" and "PDF Settings" if needed
+
+
+# Google Search Console API Configuration
+GOOGLE_CLIENT_SECRETS_FILE=client_secrets.json
+GOOGLE_TOKEN_FILE=token.json
+GOOGLE_SCOPES=https://www.googleapis.com/auth/webmasters.readonly
+
+# Website Configuration
+SITE_URL=https://your-website.com/
+
+# Report Configuration
+REPORT_DAYS_BACK=28
+REPORT_TITLE=Отчёт Google Search Console
+COMPANY_NAME=Yout website namee
+REPORT_OUTPUT_DIR=reports
+CHARTS_OUTPUT_DIR=charts
+
+# Chart Colors (comma-separated HEX values)
+CHART_COLORS=#3498DB,#2ECC71,#E74C3C,#F39C12,#9B59B6
+
+# PDF Settings
+PDF_PAGE_SIZE=letter
+PDF_LEFT_MARGIN=72
+PDF_RIGHT_MARGIN=72
+PDF_TOP_MARGIN=72
+PDF_BOTTOM_MARGIN=72

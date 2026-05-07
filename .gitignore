@@ -1,0 +1,30 @@
+# Environment variables
+.env
+
+# Google API tokens
+token.json
+client_secrets.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Report outputs
+reports/
+charts/
+*.pdf
+*.png
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
