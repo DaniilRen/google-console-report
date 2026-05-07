@@ -24,6 +24,13 @@ PDF_BOTTOM_MARGIN = int(os.getenv('PDF_BOTTOM_MARGIN', '72'))
 SITE_URL = os.getenv('SITE_URL', '')
 THEME = os.getenv('THEME', 'GRAY').upper()
 
+SECTION_METRICS = os.getenv('SECTION_METRICS', 'true').lower() == 'true'
+SECTION_TOP_QUERIES = os.getenv('SECTION_TOP_QUERIES', 'true').lower() == 'true'
+SECTION_TOP_COUNTRIES = os.getenv('SECTION_TOP_COUNTRIES', 'true').lower() == 'true'
+SECTION_DEVICES = os.getenv('SECTION_DEVICES', 'true').lower() == 'true'
+SECTION_INSPECTION = os.getenv('SECTION_INSPECTION', 'true').lower() == 'true'
+SECTION_CHARTS = os.getenv('SECTION_CHARTS', 'true').lower() == 'true'
+
 raw_urls = os.getenv('URLS_TO_INSPECT', '')
 if raw_urls.strip():
     URLS_TO_INSPECT = ['/'] + [url.strip() for url in raw_urls.split(',') if url.strip()]

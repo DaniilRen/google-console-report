@@ -7,7 +7,12 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from config import OUTPUT_DIR, PDF_PAGE_SIZE, PDF_LEFT_MARGIN, PDF_RIGHT_MARGIN, PDF_TOP_MARGIN, PDF_BOTTOM_MARGIN, CURRENT_THEME
+from config import (
+    OUTPUT_DIR, PDF_PAGE_SIZE, PDF_LEFT_MARGIN, PDF_RIGHT_MARGIN,
+    PDF_TOP_MARGIN, PDF_BOTTOM_MARGIN, CURRENT_THEME,
+    SECTION_METRICS, SECTION_TOP_QUERIES, SECTION_TOP_COUNTRIES,
+    SECTION_DEVICES, SECTION_INSPECTION, SECTION_CHARTS
+)
 from services.sections import (
     TitleSection, MetricsSection, TopQueriesSection,
     TopCountriesSection, DevicesSection, InspectionSection, ChartsSection
@@ -103,13 +108,62 @@ class ReportService:
         }
         
         story = []
+        
+        print("\n" + "=" * 50)
+        print("REPORT SECTIONS CONFIGURATION")
+        print("=" * 50)
+        
+        sections_status = [
+            ("Metrics (KPI)", SECTION_METRICS, True),
+            ("Top Queries", SECTION_TOP_QUERIES, not top_queries_df.empty),
+            ("Top Countries", SECTION_TOP_COUNTRIES, not top_countries_df.empty),
+            ("Devices", SECTION_DEVICES, not devices_df.empty),
+            ("URL Inspection", SECTION_INSPECTION, indexing_summary and indexing_summary.get('urls_checked', 0) > 0),
+            ("Charts", SECTION_CHARTS, bool(charts)),
+        ]
+        
+        for name, enabled, has_data in sections_status:
+            if enabled and has_data:
+                status = "INCLUDED"
+            elif not enabled:
+                status = "DISABLED in .env"
+            else:
+                status = "SKIPPED (no data)"
+            print(f"  {name}: {status}")
+        
+        print("=" * 50)
+        print("Building report...")
+        print("-" * 50)
+        
         story.extend(self.title_section.build(start_date, end_date, site_url))
-        story.extend(self.metrics_section.build(metrics))
-        story.extend(self.top_queries_section.build(top_queries_df))
-        story.extend(self.top_countries_section.build(top_countries_df))
-        story.extend(self.devices_section.build(devices_df))
-        story.extend(self.inspection_section.build(inspection_df, indexing_summary))
-        story.extend(self.charts_section.build(charts))
+        print("  + Title section")
+        
+        if SECTION_METRICS:
+            story.extend(self.metrics_section.build(metrics))
+            print("  + Metrics section")
+        
+        if SECTION_TOP_QUERIES and not top_queries_df.empty:
+            story.extend(self.top_queries_section.build(top_queries_df))
+            print("  + Top queries section")
+        
+        if SECTION_TOP_COUNTRIES and not top_countries_df.empty:
+            story.extend(self.top_countries_section.build(top_countries_df))
+            print("  + Top countries section")
+        
+        if SECTION_DEVICES and not devices_df.empty:
+            story.extend(self.devices_section.build(devices_df))
+            print("  + Devices section")
+        
+        if SECTION_INSPECTION and indexing_summary and indexing_summary.get('urls_checked', 0) > 0:
+            story.extend(self.inspection_section.build(inspection_df, indexing_summary))
+            print("  + URL Inspection section")
+        
+        if SECTION_CHARTS and charts:
+            story.extend(self.charts_section.build(charts))
+            print("  + Charts section")
+        
+        print("-" * 50)
         
         doc.build(story)
+        print(f"\nReport saved successfully: {filename}")
         return filename
